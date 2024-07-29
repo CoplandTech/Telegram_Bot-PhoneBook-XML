@@ -2,7 +2,7 @@
 
 Этот проект предназначен для организации телефонной книги организации/учреждения.
 Он включает в себя:
-1. Чтение XML файла из GOOGLE CONTACT. [Проект](https://github.com/CoplandTech/GoogleCon_XML)
+1. Чтение XML файла из GOOGLE CONTACT. [Проект](https://github.com/CoplandTech/GoogleCon)
 2. Cоздания .xlsx файла
 3. Передача данных в Telegram бота.
 
@@ -17,7 +17,7 @@
 
 Проект состоит из следующих основных компонентов:
 
-1. **Чтенеи XML файла**: Чтение XML файла в соответствии с разметкой телефонной книги Yealink из [GOOGLE CONTACT](https://github.com/CoplandTech/GoogleCon_XML).
+1. **Чтенеи XML файла**: Чтение XML файла в соответствии с разметкой телефонной книги Yealink из [GOOGLE CONTACT](https://github.com/CoplandTech/GoogleCon).
 2. **Генерация .xlsx файла**: Извлечение данных из XML файла и создание .xlsx файла в соответствии со структурой подразделений.
 3. **Интеграция с Telegram ботом**: Передача данных из XML файла в Telegram бот для удобного и быстрого доступа.
    
@@ -52,7 +52,7 @@
 ## Использование
 
 1. **Формирование/создание XML файла**:
-   Вручную создайте, воспользуйтесь формированием XML файла из [GOOGLE CONTACT](https://github.com/CoplandTech/GoogleCon_XML) или воспользуйтесь XML файлом [из репозитория](https://github.com/CoplandTech/phonebook_tg_bot/blob/main/contacts.xml).
+   Вручную создайте, воспользуйтесь формированием XML файла из [GOOGLE CONTACT](https://github.com/CoplandTech/GoogleCon) или воспользуйтесь XML файлом [из репозитория](https://github.com/CoplandTech/phonebook_tg_bot/blob/main/contacts.xml).
 **Структура файла**:
 
   ```XML
