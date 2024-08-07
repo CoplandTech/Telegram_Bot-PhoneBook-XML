@@ -34,16 +34,6 @@ ap1 = KeyboardButton(text='Список заявок')
 ap2 = KeyboardButton(text='Просмотреть заявку')
 admin_panel.add(ap1).add(ap2)
 
-ikb = InlineKeyboardMarkup(row_width=2)
-ib2 = InlineKeyboardButton(text='Предыдущая', callback_data='phones.prev')
-ib3 = InlineKeyboardButton(text='Следующая', callback_data='phones.next')
-ikb.add(ib2, ib3)
-
-ikb_request = InlineKeyboardMarkup(row_width=2)
-ibr1 = InlineKeyboardButton(text='Назад', callback_data='page.prev')
-ibr2 = InlineKeyboardButton(text='Вперед', callback_data='page.next')
-ikb_request.add(ibr1, ibr2)
-
 ra = ReplyKeyboardMarkup(resize_keyboard=True)
 ra1 =  KeyboardButton(text='📝 Подать повторную заявку')
 ra.add(ra1)
