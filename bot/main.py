@@ -12,13 +12,16 @@ from datetime import datetime, timedelta
 import re
 import pymorphy2
 from inc.config import TOKEN_API, LIST_ADMIN_ID, RETRY_INTERVAL_DAYS, PHRASES, PATH_XLSX_FILE
-from keyboards import kb, ra, kb_phonebook, kb_phonebook_search, kb_request, admin_panel, ikb, ikb_request, kb_chat
+from keyboards import kb, ra, kb_phonebook, kb_phonebook_search, kb_request, admin_panel, kb_chat
 from data import get_list_contact, get_unit_contact, getpagephones, generate_xlsx
 from workrequests import record, get_unit_record, get_user_status, get_last_request_time, getpagerequests, getnotification, setrefusal, setapprove
+from inc.utils import IsAdmin, create_pagination_keyboard, call_data_process, page_data_requests, page_data_contacts
 
 bot = Bot(TOKEN_API)
 storage = MemoryStorage()
 dp = Dispatcher(bot=bot, storage=storage)
+
+dp.filters_factory.bind(IsAdmin)
 
 class Form(StatesGroup):
     name = State()
@@ -175,33 +178,11 @@ async def open_phonebook(message: types.Message):
 
 @dp.message_handler(Text(equals='Показать всех сотрудников'))
 async def show_employee(message: types.Message):
-    global page
-    page = 0
-    pages = (len(get_list_contact()[1]) + 9) // 10 
-    ikb = InlineKeyboardMarkup(row_width=3)
-    if page > 0:
-        ikb.add(InlineKeyboardButton(text='Предыдущая', callback_data='phones.prev'))
-    ikb.add(InlineKeyboardButton(text=f'{page + 1}/{pages}', callback_data='phones.page_info'))
-    if page < pages - 1:
-        ikb.add(InlineKeyboardButton(text='Следующая', callback_data='phones.next'))
-    await bot.send_message(text="\n".join(getpagephones()[page]), chat_id=message.chat.id, reply_markup=ikb)
-
-# Пагинация
-@dp.callback_query_handler(lambda call: call.data.startswith('phones.'))
-async def call_employee_process(call: types.CallbackQuery):
-    pages = (len(get_list_contact()[1]) + 9) // 10 
-    global page
-    if call.data == "phones.next" and page < pages - 1:
-        page += 1
-    elif call.data == "phones.prev" and page > 0:
-        page -= 1
-    ikb = InlineKeyboardMarkup(row_width=3)
-    if page > 0:
-        ikb.add(InlineKeyboardButton(text='Предыдущая', callback_data='phones.prev'))
-    ikb.add(InlineKeyboardButton(text=f'{page + 1}/{pages}', callback_data='phones.page_info'))
-    if page < pages - 1:
-        ikb.add(InlineKeyboardButton(text='Следующая', callback_data='phones.next'))
-    await call.message.edit_text(text="\n".join(getpagephones()[page]), reply_markup=ikb)
+    global page_data_contacts
+    page_data_contacts = 0
+    pages = (len(get_list_contact()[1]) + 9) // 10
+    ikb = create_pagination_keyboard(page_data_contacts, pages, 'phones')
+    await bot.send_message(text="\n".join(getpagephones()[page_data_contacts]), chat_id=message.chat.id, reply_markup=ikb)
 
 @dp.message_handler(Text(equals='📄 Скачать EXEL'))
 async def send_file(message: types.Message):
@@ -258,23 +239,15 @@ async def call_refusal_process(call: types.CallbackQuery):
         for admin_id in LIST_ADMIN_ID:
             await bot.send_message(admin_id, text='⛔ Поступившая заявка была отклонена!')
 
-@dp.message_handler(Text(equals='Список заявок'))
-async def show_employee(message: types.Message):
-    await bot.send_message(text="\n".join(getpagerequests()[0]), chat_id=message.chat.id, reply_markup=ikb_request)
+@dp.message_handler(Text(equals='Список заявок'), is_admin=True)
+async def show_requests(message: types.Message):
+    global page_data_requests
+    page_data_requests = 0
+    pages_data = (len(getpagerequests()) + 9) // 10
+    ikb = create_pagination_keyboard(page_data_requests, pages_data, 'requests')
+    await bot.send_message(text="\n".join(getpagerequests()[page_data_requests]), chat_id=message.chat.id, reply_markup=ikb)
 
-page_data = 0
-
-@dp.callback_query_handler(lambda call: call.data.startswith('page.'))
-async def call_data_process(call: types.CallbackQuery):
-    pages_data = (float(len(getpagerequests())))
-    global page_data
-    if call.data == "page.next" and page_data < pages_data:
-        page_data += 1
-    if call.data == "page.prev" and page_data > -pages_data:
-        page_data -= 1
-    await call.message.edit_text(text="\n".join(getpagerequests()[page_data]), reply_markup=ikb_request)
-
-@dp.message_handler(Text(equals='Просмотреть заявку'))
+@dp.message_handler(Text(equals='Просмотреть заявку'), is_admin=True)
 async def getuserid(message: types.Message):
     await Contact.id.set()
     await message.answer(text='Введите № заявки')
@@ -297,6 +270,10 @@ async def handle_user_message(message: types.Message):
         await cmd_start(message)
     else:
         await message.answer(f"Мы пока не хотим принимать простые сообщения 😶")
+
+@dp.callback_query_handler(lambda call: call.data.startswith('requests.') or call.data.startswith('phones.'))
+async def call_data_process_wrapper(call: types.CallbackQuery):
+    await call_data_process(call, getpagerequests, get_list_contact, getpagephones)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
