@@ -14,7 +14,7 @@ import pymorphy2
 from inc.config import TOKEN_API, LIST_ADMIN_ID, RETRY_INTERVAL_DAYS, PHRASES, PATH_XLSX_FILE
 from keyboards import kb, ra, kb_phonebook, kb_phonebook_search, kb_request, admin_panel, kb_chat
 from data import get_list_contact, get_unit_contact, generate_xlsx
-from workrequests import record, get_unit_record, get_user_status, get_last_request_time, getpagerequests, getpagephones, getnotification, setrefusal, setapprove
+from workrequests import record, get_unit_record, get_user_status, get_last_request_time, getpagerequests, getpagephones, getnotification, update_status
 from inc.utils import IsAdmin, create_pagination_keyboard, call_data_process, page_data_requests, page_data_contacts
 
 bot = Bot(TOKEN_API)
@@ -217,26 +217,30 @@ async def process_final(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(lambda call: call.data.startswith('request.approve'))
 async def call_approve_process(call: types.CallbackQuery):
     await bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id, reply_markup=None)
-    user_id = call.data.split("_")
-    if get_user_status(user_id[1]) == "Одобрено":
+    user_id = call.data.split("_")[1]
+    current_status = get_user_status(user_id)
+    
+    if current_status == "Одобрено":
         print('Уже одобрена')
     else:
-        setapprove(user_id[1])
-        await bot.send_message(user_id[1], text='✅ Ваша заявка была принята!', reply_markup=kb)
+        request_id = update_status(user_id, current_status, "Одобрено")
+        await bot.send_message(user_id, text='✅ Ваша заявка была принята!', reply_markup=kb)
         for admin_id in LIST_ADMIN_ID:
-            await bot.send_message(admin_id, text='✅ Поступившая заявка была одобрена!')
+            await bot.send_message(admin_id, text=f'✅ Заявка №{request_id} была одобрена!')
 
 @dp.callback_query_handler(lambda call: call.data.startswith('request.refusal'))
 async def call_refusal_process(call: types.CallbackQuery):
     await bot.edit_message_reply_markup(chat_id=call.from_user.id, message_id=call.message.message_id, reply_markup=None)
-    user_id = call.data.split("_")
-    if get_user_status(user_id[1]) == "Отклонено":
+    user_id = call.data.split("_")[1]
+    current_status = get_user_status(user_id)
+    
+    if current_status == "Отклонено":
         print('Уже отклонена')
     else:
-        setrefusal(user_id[1])
-        await bot.send_message(user_id[1], text='⛔ Ваша заявка была отклонена', reply_markup=ra)
+        request_id = update_status(user_id, current_status, "Отклонено")
+        await bot.send_message(user_id, text='⛔ Ваша заявка была отклонена', reply_markup=ra)
         for admin_id in LIST_ADMIN_ID:
-            await bot.send_message(admin_id, text='⛔ Поступившая заявка была отклонена!')
+            await bot.send_message(admin_id, text=f'⛔ Заявка №{request_id} была отклонена!')
 
 @dp.message_handler(Text(equals='Список заявок'), is_admin=True)
 async def show_requests(message: types.Message):
@@ -257,9 +261,49 @@ async def process_id(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['name'] = message.text
     await state.finish()
+    
+    user_id = get_unit_record(data["name"])[0]
+    user_status = get_user_status(user_id)
+    
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton(text=f'👁 Профиль', url=f'tg://user?id={get_unit_record(data["name"])[0]}'))
+    # markup.add(InlineKeyboardButton(text=f'👁 Профиль', url=f'tg://user?id={user_id}'))
+    
+    if user_status == "Одобрено":
+        markup.add(InlineKeyboardButton(text='Отклонить', callback_data=f'reject_{user_id}'))
+    elif user_status == "Отклонено":
+        markup.add(InlineKeyboardButton(text='Одобрить', callback_data=f'approve_{user_id}'))
+
     await message.answer(text=get_unit_record(data["name"])[1], reply_markup=markup)
+
+@dp.callback_query_handler(lambda c: c.data.startswith('approve_'))
+async def process_approve(callback_query: types.CallbackQuery):
+    user_id = callback_query.data.split('_')[1]
+    user_status = get_user_status(user_id)
+    
+    if user_status == "Обработка":
+        request_id = update_status(user_id, "Обработка", "Одобрено")
+    elif user_status == "Отклонено":
+        request_id = update_status(user_id, "Отклонено", "Одобрено")
+    
+    await bot.send_message(user_id, text='✅ Теперь ваша заявка принята!', reply_markup=kb)
+    for admin_id in LIST_ADMIN_ID:
+        await bot.send_message(admin_id, text=f'✅ Заявка №{request_id} была одобрена!')
+
+    
+@dp.callback_query_handler(lambda c: c.data.startswith('reject_'))
+async def process_reject(callback_query: types.CallbackQuery):
+    user_id = callback_query.data.split('_')[1]
+    user_status = get_user_status(user_id)
+        
+    if user_status == "Обработка":
+        request_id = update_status(user_id, "Обработка", "Отклонено")
+    elif user_status == "Одобрено":
+        request_id = update_status(user_id, "Одобрено", "Отклонено")
+    
+    await bot.send_message(user_id, text='⛔ Теперь ваша заявка отклонена!', reply_markup=ra)
+    for admin_id in LIST_ADMIN_ID:
+        await bot.send_message(admin_id, text=f'⛔ Заявка №{request_id} была отклонена!')
+
 
 @dp.message_handler()
 async def handle_user_message(message: types.Message):
