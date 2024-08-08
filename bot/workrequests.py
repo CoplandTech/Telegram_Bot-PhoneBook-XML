@@ -108,6 +108,8 @@ def getnotification(user_id):
 
 def update_status(user_id, current_status, new_status):
     request_id = None
+    current_time = datetime.now().isoformat() 
+
     with open(current_directory, "r", encoding="utf-8") as openfile:
         file = csv.DictReader(openfile, delimiter=",")
         data = [row for row in file]
@@ -118,6 +120,7 @@ def update_status(user_id, current_status, new_status):
         for d in data:
             if d["user_id"] == str(user_id) and d["status"] == current_status:
                 d["status"] = new_status
+                d["timestamp"] = current_time
                 request_id = d["id"]
             writer.writerow(d)
     return request_id
