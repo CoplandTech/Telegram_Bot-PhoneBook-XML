@@ -106,7 +106,8 @@ def getnotification(user_id):
                 data.append(f'Заявка № {row["id"]}\nФИО: {row["name"]}\nДолжность: {row["job"]}')
         return data[-1] if data else "Нет данных по заявке"
 
-def setrefusal(user_id):
+def update_status(user_id, current_status, new_status):
+    request_id = None
     with open(current_directory, "r", encoding="utf-8") as openfile:
         file = csv.DictReader(openfile, delimiter=",")
         data = [row for row in file]
@@ -115,21 +116,8 @@ def setrefusal(user_id):
         writer = csv.DictWriter(f, fieldnames=list(data[0].keys()))
         writer.writeheader()
         for d in data:
-            if d["user_id"] == str(user_id) and d["status"] == "Обработка":
-                d["status"] = "Отклонено"
+            if d["user_id"] == str(user_id) and d["status"] == current_status:
+                d["status"] = new_status
+                request_id = d["id"]
             writer.writerow(d)
-    return print('ref')
-
-def setapprove(user_id):
-    with open(current_directory, "r", encoding="utf-8") as openfile:
-        file = csv.DictReader(openfile, delimiter=",")
-        data = [row for row in file]
-
-    with open(current_directory, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=list(data[0].keys()))
-        writer.writeheader()
-        for d in data:
-            if d["user_id"] == str(user_id) and d["status"] == "Обработка":
-                d["status"] = "Одобрено"
-            writer.writerow(d)
-    return print('app')
+    return request_id
