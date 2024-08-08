@@ -1,6 +1,6 @@
-from aiogram.dispatcher.filters import BoundFilter
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.dispatcher.filters import BoundFilter
 from inc.config import LIST_ADMIN_ID
 
 class IsAdmin(BoundFilter):
@@ -9,9 +9,12 @@ class IsAdmin(BoundFilter):
     def __init__(self, is_admin):
         self.is_admin = is_admin
 
-    async def check(self, message: types.Message) -> bool:
+    async def check(self, message):
         return str(message.from_user.id) in LIST_ADMIN_ID
-    
+
+page_data_requests = 0
+page_data_contacts = 0
+
 page_data_requests = 0
 page_data_contacts = 0
 
@@ -33,12 +36,13 @@ async def handle_pagination(call, page, pages, get_page_data_func, prefix):
     await call.message.edit_text(text="\n".join(get_page_data_func()[page]), reply_markup=ikb)
     return page
 
-# Универсальный обработчик для пагинации
 async def call_data_process(call: types.CallbackQuery, getpagerequests, get_list_contact, getpagephones):
     global page_data_requests, page_data_contacts
-    if call.data.startswith('requests.'):
-        pages_data = (len(getpagerequests()) + 9) // 10
-        page_data_requests = await handle_pagination(call, page_data_requests, pages_data, getpagerequests, 'requests')
-    elif call.data.startswith('phones.'):
-        pages = (len(get_list_contact()[1]) + 9) // 10
+    if (prefix := call.data.split('.')[0]) == 'requests':
+        requests = getpagerequests()
+        pages_data = len(requests)
+        page_data_requests = await handle_pagination(call, page_data_requests, pages_data, lambda: requests, 'requests')
+    elif prefix == 'phones':
+        contacts = get_list_contact()[1]
+        pages = (len(contacts) + 9) // 10
         page_data_contacts = await handle_pagination(call, page_data_contacts, pages, getpagephones, 'phones')
