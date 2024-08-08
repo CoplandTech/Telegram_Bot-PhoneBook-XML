@@ -1,6 +1,7 @@
 import csv
 import os
 from datetime import datetime
+from data import get_list_contact
 
 current_directory = os.getcwd() + "/bot/inc/data.csv"
 
@@ -85,9 +86,16 @@ def get_last_request_time(user_id):
 
 def getpagerequests():
     records = []
-    for i in range(0, len(get_list_record()), 10):
-        records.append(get_list_record()[i:i+10])
-    return records[::-1]
+    list_record = get_list_record()
+    for i in range(0, len(list_record), 10):
+        records.append(list_record[i:i+10])
+    return records
+
+def getpagephones():
+    pagephones = []
+    for i in range(0, len(get_list_contact()[1]), 10):
+        pagephones.append(get_list_contact()[1][i:i+10])
+    return pagephones
 
 def getnotification(user_id):
     with open(current_directory, "r", encoding="utf8") as openfile:

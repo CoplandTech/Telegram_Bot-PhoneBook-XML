@@ -13,8 +13,8 @@ import re
 import pymorphy2
 from inc.config import TOKEN_API, LIST_ADMIN_ID, RETRY_INTERVAL_DAYS, PHRASES, PATH_XLSX_FILE
 from keyboards import kb, ra, kb_phonebook, kb_phonebook_search, kb_request, admin_panel, kb_chat
-from data import get_list_contact, get_unit_contact, getpagephones, generate_xlsx
-from workrequests import record, get_unit_record, get_user_status, get_last_request_time, getpagerequests, getnotification, setrefusal, setapprove
+from data import get_list_contact, get_unit_contact, generate_xlsx
+from workrequests import record, get_unit_record, get_user_status, get_last_request_time, getpagerequests, getpagephones, getnotification, setrefusal, setapprove
 from inc.utils import IsAdmin, create_pagination_keyboard, call_data_process, page_data_requests, page_data_contacts
 
 bot = Bot(TOKEN_API)
@@ -33,10 +33,8 @@ class Request(StatesGroup):
 class Contact(StatesGroup):
     id = State()
 
-# Инициализация pymorphy2
 morph = pymorphy2.MorphAnalyzer()
 
-# Функция для склонения
 def decline_word(number, word):
     p = morph.parse(word)[0]
     return p.make_agree_with_number(number).word
@@ -180,7 +178,8 @@ async def open_phonebook(message: types.Message):
 async def show_employee(message: types.Message):
     global page_data_contacts
     page_data_contacts = 0
-    pages = (len(get_list_contact()[1]) + 9) // 10
+    contacts = get_list_contact()[1]
+    pages = (len(contacts) + 9) // 10
     ikb = create_pagination_keyboard(page_data_contacts, pages, 'phones')
     await bot.send_message(text="\n".join(getpagephones()[page_data_contacts]), chat_id=message.chat.id, reply_markup=ikb)
 
@@ -243,9 +242,10 @@ async def call_refusal_process(call: types.CallbackQuery):
 async def show_requests(message: types.Message):
     global page_data_requests
     page_data_requests = 0
-    pages_data = (len(getpagerequests()) + 9) // 10
+    requests = getpagerequests()
+    pages_data = len(requests)
     ikb = create_pagination_keyboard(page_data_requests, pages_data, 'requests')
-    await bot.send_message(text="\n".join(getpagerequests()[page_data_requests]), chat_id=message.chat.id, reply_markup=ikb)
+    await bot.send_message(text="\n".join(requests[page_data_requests]), chat_id=message.chat.id, reply_markup=ikb)
 
 @dp.message_handler(Text(equals='Просмотреть заявку'), is_admin=True)
 async def getuserid(message: types.Message):

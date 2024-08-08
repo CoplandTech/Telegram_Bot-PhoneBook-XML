@@ -84,12 +84,6 @@ def get_unit_contact(name):
         else:
             result = phones.get(nametitle)
             return result if result else error
-
-def getpagephones():
-    pagephones = []
-    for i in range(0, len(get_list_contact()[1]), 10):
-        pagephones.append(get_list_contact()[1][i:i+10])
-    return pagephones
     
 def generate_xlsx():
     response = requests.get(URL_XML)
