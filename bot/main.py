@@ -269,9 +269,9 @@ async def process_id(message: types.Message, state: FSMContext):
     markup.add(InlineKeyboardButton(text=f'👁 Профиль', url=f'tg://user?id={user_id}'))
     
     if user_status == "Одобрено":
-        markup.add(InlineKeyboardButton(text='Отклонить', callback_data=f'reject_{user_id}'))
+        markup.add(InlineKeyboardButton(text='⛔ Отклонить', callback_data=f'reject_{user_id}'))
     elif user_status == "Отклонено":
-        markup.add(InlineKeyboardButton(text='Одобрить', callback_data=f'approve_{user_id}'))
+        markup.add(InlineKeyboardButton(text='✅ Одобрить', callback_data=f'approve_{user_id}'))
 
     await message.answer(text=get_unit_record(data["name"])[1], reply_markup=markup)
 
