@@ -15,9 +15,6 @@ class IsAdmin(BoundFilter):
 page_data_requests = 0
 page_data_contacts = 0
 
-page_data_requests = 0
-page_data_contacts = 0
-
 def create_pagination_keyboard(page, pages, prefix):
     ikb = InlineKeyboardMarkup(row_width=3)
     if page > 0:
